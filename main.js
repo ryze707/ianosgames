@@ -1,14 +1,10 @@
-// main.js - navegação, chat (frontend), Pong (mouse control)
-// COLE SUA CHAVE AQUI se quiser testar o Gemini no frontend (CORS possível)
-const GEMINI_API_KEY = "AIzaSyAS-SLe94hpmyLp8IvX1VjIt8IjXfB_UW4"; // <-- cole sua chave aqui para testes locais (risco: chave exposta)
+const GEMINI_API_KEY = "AIzaSyAS-SLe94hpmyLp8IvX1VjIt8IjXfB_UW4";
 
-// quick initial log
 console.log("main.js loaded");
 
 document.addEventListener("DOMContentLoaded", () => {
   console.log("DOMContentLoaded fired");
 
-  // Pages
   const pageMenu = document.getElementById("menu");
   const pageChat = document.getElementById("chat");
   const pageJogos = document.getElementById("jogos");
@@ -21,15 +17,13 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("Erro interno: página não encontrada: " + id);
       return;
     }
-    // hide all
+    
     Object.values(pages).forEach(p => p.style.display = "none");
     pages[id].style.display = "flex";
     console.log("showPage:", id);
-    // when switching away from jogos hide end message
     if (id !== "jogos") hideEndMessage();
   }
 
-  // menu buttons
   const btnChat = document.getElementById("btn-chat");
   const btnJogos = document.getElementById("btn-jogos");
   const btnCreds = document.getElementById("btn-creditos");
@@ -43,10 +37,8 @@ document.addEventListener("DOMContentLoaded", () => {
   btnCreds.addEventListener("click", () => showPage("creditos"));
   console.log("Menu listeners attached");
 
-  // back buttons
   document.querySelectorAll(".back").forEach(b => b.addEventListener("click", () => showPage("menu")));
 
-  /* ---------- CHAT ---------- */
   const chatBox = document.getElementById("chat-box");
   const userInput = document.getElementById("user-input");
   const sendBtn = document.getElementById("send-btn");
@@ -59,26 +51,21 @@ document.addEventListener("DOMContentLoaded", () => {
     chatBox.appendChild(d);
     chatBox.scrollTop = chatBox.scrollHeight;
   }
-  appendChat("Chat pronto. Cole sua chave em main.js para testar Gemini.", "ai");
+  appendChat("Chat pronto. Digite algo para começar o chat.", "ai");
 
-// === callGemini atualizado: usa models.generateContent (v1beta) e retorna SOMENTE o texto da resposta ===
 async function callGemini(prompt) {
   if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY não configurada em main.js");
 
-  // Ajuste o model aqui se necessário. Recomendado: "gemini-2.5-flash" ou "gemini-2.0-flash"
   const MODEL_NAME = "gemini-2.5-flash";
 
-  // endpoint conforme docs: POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key=API_KEY
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL_NAME)}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
 
-  // body conforme "GenerateContentRequest" - contents é um array; cada content pode ter parts (text)
   const body = {
     contents: [
       {
         parts: [{ text: String(prompt) }]
       }
     ],
-    // você pode ajustar generationConfig aqui se quiser (temperature, maxOutputTokens etc.)
     generationConfig: {
       temperature: 0.6,
       maxOutputTokens: 300
@@ -92,7 +79,6 @@ async function callGemini(prompt) {
   });
 
   if (!res.ok) {
-    // devolve um erro legível com corpo (útil para debugging)
     const errTxt = await res.text().catch(() => "");
     throw new Error(`Erro da API (${res.status}): ${errTxt}`);
   }
@@ -100,12 +86,6 @@ async function callGemini(prompt) {
   const data = await res.json().catch(() => null);
   if (!data) throw new Error("Resposta inválida (JSON vazio).");
 
-  // --- Filtragem robusta: tenta vários caminhos onde o texto pode aparecer ---
-  // 1) candidates[].content[0].parts[0].text  (conforme generateContent examples)
-  // 2) candidates[].output  (algumas respostas SDK/compatibility)
-  // 3) output[0].content[0].text
-  // 4) candidates[0].content.parts[0].text (variante)
-  // 5) fallback: pega a primeira string longa encontrada no objeto JSON (apenas se necessário)
   let reply = null;
 
   try {
@@ -114,16 +94,14 @@ async function callGemini(prompt) {
       data?.candidates?.[0]?.content?.parts?.[0]?.text ||
       data?.candidates?.[0]?.output ||
       data?.output?.[0]?.content?.[0]?.text ||
-      data?.text || // caso SDK retorne text em outra propriedade
+      data?.text ||
       null;
   } catch (e) {
     reply = null;
   }
 
-  // último recurso: procurar a primeira string razoável no JSON (limita tamanho)
   if (!reply) {
     const j = JSON.stringify(data);
-    // tenta extrair um trecho com aspas internas removidas (evita monstrar todo JSON)
     const match = j.match(/"text"\s*:\s*"([^"]{20,200})"/);
     if (match && match[1]) reply = match[1];
   }
@@ -156,7 +134,6 @@ async function callGemini(prompt) {
   if (sendBtn) sendBtn.addEventListener("click", sendChat);
   if (userInput) userInput.addEventListener("keydown", e => { if (e.key === "Enter") sendChat(); });
 
-  /* ---------- PONG ---------- */
   const canvas = document.getElementById("pong");
   if (!canvas) { console.error("Canvas missing"); return; }
   const ctx = canvas.getContext("2d");
@@ -265,13 +242,13 @@ async function callGemini(prompt) {
     winnerText.textContent = win ? "🎉 Você venceu!" : "😢 Você perdeu!";
     endMessage.classList.remove("hidden");
     state.running = false;
-    state.ended = true; // <- adiciona flag para saber que terminou
+    state.ended = true;
   }
 
 function hideEndMessage() {
   endMessage.classList.add("hidden");
   winnerText.textContent = "";
-  state.ended = false; // <- reseta flag ao recomeçar
+  state.ended = false;
 }
 
   let countdownTimer = null;
@@ -298,9 +275,8 @@ function hideEndMessage() {
   }
 
   function loop() {
-  // se o jogo terminou, não continua o loop
   if (state.ended) {
-    drawScene(); // desenha só a tela final congelada
+    drawScene();
     return;
   }
 
@@ -325,11 +301,9 @@ function hideEndMessage() {
   requestAnimationFrame(loop);
 }
 
-  // start loop and initial reset
   resetBall();
   loop();
 
-  // mouse control
   canvas.addEventListener("mousemove", (e) => {
     const rect = canvas.getBoundingClientRect();
     const y = e.clientY - rect.top;
@@ -342,7 +316,6 @@ function hideEndMessage() {
     paddle.y = clamp(y - paddle.h/2, 0, canvas.height - paddle.h);
   }, { passive: true });
 
-  // difficulty buttons
   document.querySelectorAll(".diff-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       document.querySelectorAll(".diff-btn").forEach(b => b.classList.remove("selected"));
@@ -355,7 +328,6 @@ function hideEndMessage() {
     });
   });
 
-  // back to menu after end
   backMenuBtn.addEventListener("click", () => {
     state.running = false;
     state.playerScore = 0; state.aiScore = 0;
@@ -364,11 +336,9 @@ function hideEndMessage() {
     showPage("menu");
   });
 
-  // ensure game paused when leaving jogos
   document.querySelectorAll(".back").forEach(b => b.addEventListener("click", () => { state.running = false; }));
 
-  // debug export
   window._IA_PROJECT = { state, ball, paddle, aiPaddle };
   console.log("IA project ready", window._IA_PROJECT);
 
-}); // end DOMContentLoaded
+});
