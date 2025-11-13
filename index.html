@@ -7,14 +7,14 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  
+
+  <!-- MENU -->
   <div id="menu" class="page">
     <div class="center-card">
       <div class="controller-icon">🎮</div>
       <h1>INTELIGÊNCIA ARTIFICIAL NOS GAMES</h1>
 
       <div class="menu-buttons column">
-        <button id="btn-chat" class="big">Chat</button>
         <button id="btn-jogos" class="big">Jogos</button>
         <button id="btn-creditos" class="big">Créditos</button>
       </div>
@@ -23,30 +23,17 @@
     </div>
   </div>
 
-  <div id="chat" class="page" style="display:none;">
-    <button class="back">← Voltar</button>
-    <div class="center-card narrow">
-      <h2>Chat com IA</h2>
-      <div id="chat-box" class="chat-box" aria-live="polite"></div>
-
-      <div class="chat-input">
-        <input id="user-input" placeholder="Digite sua pergunta..." />
-        <button id="send-btn">Enviar</button>
-      </div>
-    </div>
-  </div>
-
+  <!-- JOGOS -->
   <div id="jogos" class="page" style="display:none;">
     <button class="back">← Voltar</button>
     <div class="center-card">
       <h2>Pong — escolha a dificuldade</h2>
+
       <div class="difficulty centered">
         <button data-diff="facil" class="diff-btn facil">Fácil</button>
         <button data-diff="medio" class="diff-btn medio">Médio</button>
-        <button data-diff="dificil" class="diff-btn dificil">Difícil</button>
+        <button data-diff="dificil" class="diff-btn dificil">Dificil</button>
       </div>
-
-      <div id="countdown" class="countdown" style="visibility:hidden"></div>
 
       <div id="game-wrap" class="game-wrap">
         <canvas id="pong" width="800" height="480"></canvas>
@@ -63,6 +50,7 @@
     </div>
   </div>
 
+  <!-- CRÉDITOS -->
   <div id="creditos" class="page" style="display:none;">
     <button class="back">← Voltar</button>
     <div class="center-card narrow">
@@ -77,8 +65,6 @@
     </div>
   </div>
 
-  <!-- main.js no final para garantir DOM já existe -->
   <script src="main.js"></script>
 </body>
 </html>
-
