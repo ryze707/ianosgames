@@ -1,4 +1,4 @@
-const GEMINI_API_KEY = "keyy";
+const GEMINI_API_KEY = "AIzaSyDvbUN8JYqndrzoek1LF5KeOHoUGjEJGuY";
 
 document.addEventListener("DOMContentLoaded", () => {
   const pageMenu = document.getElementById("menu");
