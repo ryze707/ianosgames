@@ -39,33 +39,33 @@ document.addEventListener("DOMContentLoaded", () => {
   async function callGemini(prompt) {
     if (!GEMINI_API_KEY) throw new Error("Chave da API não configurada.");
 
-    const MODEL_NAME = "gemini-pro";
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateText?key=${GEMINI_API_KEY}`;
+    async function callGemini(prompt) {
+  if (!GEMINI_API_KEY) throw new Error("Chave da API não configurada.");
 
-    const body = {
-      prompt: { text: prompt },
-      temperature: 0.6,
-      candidateCount: 1,
-      maxOutputTokens: 300
-    };
+  // ÚNICO modelo compatível com generateText
+  const MODEL_NAME = "gemini-pro";
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateText?key=${GEMINI_API_KEY}`;
 
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
+  const body = {
+    prompt: { text: prompt },
+    temperature: 0.6,
+    candidateCount: 1,
+    maxOutputTokens: 300
+  };
 
-      const rawText = await res.text();
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
 
-      // Retorna o JSON bruto (ou texto) recebido da API — sem substituições
-      // Mesmo em erro (res.ok === false) retornamos o corpo para que o front mostre
-      return rawText;
-    } catch (err) {
-      // Em caso de falha de rede, devolve um JSON claro com o erro
-      return JSON.stringify({ fetchError: String(err.message || err) }, null, 2);
-    }
+    const rawText = await res.text();
+    return rawText; // sempre retorna o JSON bruto
+  } catch (err) {
+    return JSON.stringify({ fetchError: String(err.message || err) }, null, 2);
   }
+}
 
   async function sendChat() {
     const txt = (userInput?.value || "").trim();
@@ -296,4 +296,5 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window._IA_PROJECT = { state, ball, paddle, aiPaddle };
 });
+
 
