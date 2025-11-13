@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
     chatBox.appendChild(d);
     chatBox.scrollTop = chatBox.scrollHeight;
   }
-  appendChat("Chat pronto. Cole sua chave em main.js para testar.", "ai");
+  appendChat("Chat pronto. Digite algo para começar.", "ai");
 
   async function callGemini(prompt) {
     if (!GEMINI_API_KEY) throw new Error("Chave API não configurada");
@@ -270,3 +270,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window._IA_PROJECT = { state, ball, paddle, aiPaddle };
 });
+
