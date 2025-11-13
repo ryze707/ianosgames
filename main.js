@@ -39,7 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function callGemini(prompt) {
     if (!GEMINI_API_KEY) throw new Error("Chave da API não configurada.");
 
-    const MODEL_NAME = "gemini-1.5-flash";
+    const MODEL_NAME = "gemini-pro";
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateText?key=${GEMINI_API_KEY}`;
 
     const body = {
@@ -296,3 +296,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window._IA_PROJECT = { state, ball, paddle, aiPaddle };
 });
+
