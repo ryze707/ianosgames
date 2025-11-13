@@ -1,4 +1,4 @@
-const GEMINI_API_KEY = "AIzaSyAJeIjLRGBUAu4ORqy9pSraiHcqqv_sRqQ"; // sua chave aqui
+const GEMINI_API_KEY = "AIzaSyAJeIjLRGBUAu4ORqy9pSraiHcqqv_sRqQ";
 
 document.addEventListener("DOMContentLoaded", () => {
   const pageMenu = document.getElementById("menu");
@@ -9,16 +9,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function showPage(id) {
     Object.values(pages).forEach(p => p.style.display = "none");
-    pages[id].style.display = "flex";
+    if (pages[id]) pages[id].style.display = "flex";
     if (id !== "jogos") hideEndMessage();
   }
 
   const btnChat = document.getElementById("btn-chat");
   const btnJogos = document.getElementById("btn-jogos");
   const btnCreds = document.getElementById("btn-creditos");
-  btnChat.addEventListener("click", () => showPage("chat"));
-  btnJogos.addEventListener("click", () => showPage("jogos"));
-  btnCreds.addEventListener("click", () => showPage("creditos"));
+  if (btnChat) btnChat.addEventListener("click", () => showPage("chat"));
+  if (btnJogos) btnJogos.addEventListener("click", () => showPage("jogos"));
+  if (btnCreds) btnCreds.addEventListener("click", () => showPage("creditos"));
   document.querySelectorAll(".back").forEach(b => b.addEventListener("click", () => showPage("menu")));
 
   const chatBox = document.getElementById("chat-box");
@@ -39,7 +39,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function callGemini(prompt) {
     if (!GEMINI_API_KEY) throw new Error("Chave da API não configurada.");
 
-    const MODEL_NAME = "gemini"; // ajuste aqui se descobrir o nome exato do modelo
+    const MODEL_NAME = "gemini-1.5-flash";
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateText?key=${GEMINI_API_KEY}`;
 
     const body = {
@@ -56,18 +56,14 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify(body)
       });
 
-      if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`Erro da API: ${res.status} — ${errText}`);
-      }
+      const rawText = await res.text();
 
-      const data = await res.json();
-      const reply = data?.candidates?.[0]?.output;
-      if (!reply) throw new Error("Resposta da IA vazia.");
-      return reply;
+      // Retorna o JSON bruto (ou texto) recebido da API — sem substituições
+      // Mesmo em erro (res.ok === false) retornamos o corpo para que o front mostre
+      return rawText;
     } catch (err) {
-      console.error(err);
-      return "A ia está sobrecarregada, tente novamente mais tarde.";
+      // Em caso de falha de rede, devolve um JSON claro com o erro
+      return JSON.stringify({ fetchError: String(err.message || err) }, null, 2);
     }
   }
 
@@ -82,16 +78,18 @@ document.addEventListener("DOMContentLoaded", () => {
     chatBox.appendChild(thinking);
     chatBox.scrollTop = chatBox.scrollHeight;
 
-    const reply = await callGemini(txt);
+    const raw = await callGemini(txt);
     thinking.remove();
-    appendChat(reply, "ai");
+
+    // Mostra o raw JSON/text exatamente como veio da API
+    appendChat(raw, "ai");
   }
 
-  sendBtn.addEventListener("click", sendChat);
-  userInput.addEventListener("keydown", e => { if (e.key === "Enter") sendChat(); });
+  if (sendBtn) sendBtn.addEventListener("click", sendChat);
+  if (userInput) userInput.addEventListener("keydown", e => { if (e.key === "Enter") sendChat(); });
 
-  // ===== restante da lógica do jogo Pong =====
   const canvas = document.getElementById("pong");
+  if (!canvas) return;
   const ctx = canvas.getContext("2d");
   const countdownEl = document.getElementById("countdown");
   const playerScoreEl = document.getElementById("player-score");
@@ -195,8 +193,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function checkScore() {
-    playerScoreEl.textContent = state.playerScore;
-    aiScoreEl.textContent = state.aiScore;
+    if (playerScoreEl) playerScoreEl.textContent = state.playerScore;
+    if (aiScoreEl) aiScoreEl.textContent = state.aiScore;
     if (state.playerScore >= state.target || state.aiScore >= state.target) {
       state.running = false;
       showEnd(state.playerScore > state.aiScore);
@@ -204,30 +202,32 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function showEnd(win) {
-    winnerText.textContent = win ? "🎉 Você venceu!" : "😢 Você perdeu!";
-    endMessage.classList.remove("hidden");
+    if (winnerText) winnerText.textContent = win ? "🎉 Você venceu!" : "😢 Você perdeu!";
+    if (endMessage) endMessage.classList.remove("hidden");
     state.running = false;
     state.ended = true;
   }
 
   function hideEndMessage() {
-    endMessage.classList.add("hidden");
-    winnerText.textContent = "";
+    if (endMessage) endMessage.classList.add("hidden");
+    if (winnerText) winnerText.textContent = "";
     state.ended = false;
   }
 
   let countdownTimer = null;
   function startCountdown(seconds = 3, dir = (Math.random() < 0.5 ? 1 : -1)) {
     let n = seconds;
-    countdownEl.textContent = n;
-    countdownEl.style.visibility = "visible";
+    if (countdownEl) {
+      countdownEl.textContent = n;
+      countdownEl.style.visibility = "visible";
+    }
     if (countdownTimer) clearInterval(countdownTimer);
     countdownTimer = setInterval(() => {
       n--;
-      countdownEl.textContent = n > 0 ? n : "GO!";
+      if (countdownEl) countdownEl.textContent = n > 0 ? n : "GO!";
       if (n < 0) {
         clearInterval(countdownTimer);
-        countdownEl.style.visibility = "hidden";
+        if (countdownEl) countdownEl.style.visibility = "hidden";
         resetBall(dir);
         state.running = true;
       }
@@ -273,25 +273,26 @@ document.addEventListener("DOMContentLoaded", () => {
       state.difficulty = btn.dataset.diff;
       state.playerScore = 0;
       state.aiScore = 0;
-      playerScoreEl.textContent = "0";
-      aiScoreEl.textContent = "0";
+      if (playerScoreEl) playerScoreEl.textContent = "0";
+      if (aiScoreEl) aiScoreEl.textContent = "0";
       hideEndMessage();
       resetBall();
       startCountdown(3, Math.random() < 0.5 ? 1 : -1);
     });
   });
 
-  backMenuBtn.addEventListener("click", () => {
+  if (backMenuBtn) backMenuBtn.addEventListener("click", () => {
     state.running = false;
     state.playerScore = 0;
     state.aiScore = 0;
-    playerScoreEl.textContent = "0";
-    aiScoreEl.textContent = "0";
+    if (playerScoreEl) playerScoreEl.textContent = "0";
+    if (aiScoreEl) aiScoreEl.textContent = "0";
     hideEndMessage();
     resetBall();
     showPage("menu");
   });
 
+  document.querySelectorAll(".back").forEach(b => b.addEventListener("click", () => { state.running = false; }));
+
   window._IA_PROJECT = { state, ball, paddle, aiPaddle };
 });
-
