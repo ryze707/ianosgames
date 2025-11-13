@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
     chatBox.appendChild(d);
     chatBox.scrollTop = chatBox.scrollHeight;
   }
-  appendChat("Chat pronto. Digite algo para começar.", "ai");
+  appendChat("Chat pronto. Digite algo para ver o JSON completo da API.", "ai");
 
   async function callGemini(prompt) {
     if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY não configurada");
@@ -43,16 +43,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateText?key=${GEMINI_API_KEY}`;
     const body = { prompt: prompt, temperature: 0.6, candidateCount: 1, maxOutputTokens: 300 };
 
+    const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    const rawText = await res.text();
     try {
-      const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-      if (!res.ok) throw new Error("Erro ao chamar API");
-
-      const data = await res.json();
-      const reply = data?.candidates?.[0]?.output || null;
-      if (!reply) throw new Error("Resposta vazia");
-      return reply;
+      const data = JSON.parse(rawText);
+      return JSON.stringify(data, null, 2); // Retorna o JSON completo formatado
     } catch {
-      return "A ia está sobrecarregada, tente novamente mais tarde.";
+      return rawText;
     }
   }
 
@@ -63,7 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (userInput) userInput.value = "";
     const thinking = document.createElement("div");
     thinking.className = "msg ai";
-    thinking.innerText = "Pensando...";
+    thinking.innerText = "Buscando JSON...";
     chatBox.appendChild(thinking);
     chatBox.scrollTop = chatBox.scrollHeight;
 
