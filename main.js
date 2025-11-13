@@ -1,4 +1,4 @@
-const GEMINI_API_KEY = "AIzaSyDvbUN8JYqndrzoek1LF5KeOHoUGjEJGuY"; // sua chave aqui
+const GEMINI_API_KEY = "AIzaSyAJeIjLRGBUAu4ORqy9pSraiHcqqv_sRqQ"; // sua chave aqui
 
 document.addEventListener("DOMContentLoaded", () => {
   const pageMenu = document.getElementById("menu");
@@ -294,3 +294,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window._IA_PROJECT = { state, ball, paddle, aiPaddle };
 });
+
