@@ -304,13 +304,22 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  backMenuBtn.addEventListener("click", ()=>{
-    state.running=false;
-    state.playerScore=0; state.aiScore=0;
-    playerScoreEl.textContent="0"; aiScoreEl.textContent="0";
-    hideEndMessage();
-    showPage("menu");
-  });
+backMenuBtn.addEventListener("click", () => {
+  state.running = false;
+  state.playerScore = 0;
+  state.aiScore = 0;
+  state.ended = false;
+  hideEndMessage();
+  
+  paddle.y = canvas.height/2 - paddle.h/2;
+  aiPaddle.y = canvas.height/2 - aiPaddle.h/2;
+  resetBall();
+
+  playerScoreEl.textContent = "0";
+  aiScoreEl.textContent = "0";
+  showPage("menu");
+});
+
 
   document.querySelectorAll(".back").forEach(b=>b.addEventListener("click", ()=>{ state.running=false; }));
 
@@ -318,3 +327,4 @@ document.addEventListener("DOMContentLoaded", () => {
   console.log("IA project ready", window._IA_PROJECT);
 
 });
+
