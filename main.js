@@ -1,4 +1,4 @@
-const GEMINI_API_KEY = "AIzaSyAS-SLe94hpmyLp8IvX1VjIt8IjXfB_UW4";
+const GEMINI_API_KEY = "AIzaSyAS-SLe94hpmyLp8Iv8IjXfB_UW4";
 
 console.log("main.js loaded");
 
@@ -38,7 +38,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.querySelectorAll(".back").forEach(b => b.addEventListener("click", () => showPage("menu")));
 
-  /* ---------- CHAT ---------- */
   const chatBox = document.getElementById("chat-box");
   const userInput = document.getElementById("user-input");
   const sendBtn = document.getElementById("send-btn");
@@ -55,28 +54,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function callGemini(prompt) {
     if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY não configurada em main.js");
-
     const MODEL_NAME = "gemini-2.5-flash";
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL_NAME)}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
-
-    const body = {
-      contents: [{ parts: [{ text: String(prompt) }] }],
-      generationConfig: { temperature: 0.6, maxOutputTokens: 300 }
-    };
-
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    });
-
-    if (!res.ok) {
-      throw new Error(`Erro da API (${res.status})`);
-    }
-
+    const body = { contents: [{ parts: [{ text: String(prompt) }] }], generationConfig: { temperature: 0.6, maxOutputTokens: 300 } };
+    const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    if (!res.ok) throw new Error(`Erro da API (${res.status})`);
     const data = await res.json().catch(() => null);
     if (!data) throw new Error("Resposta inválida (JSON vazio).");
-
     let reply = null;
     try {
       reply =
@@ -87,14 +71,12 @@ document.addEventListener("DOMContentLoaded", () => {
         data?.text ||
         null;
     } catch { reply = null; }
-
     if (!reply) {
       const j = JSON.stringify(data);
       const match = j.match(/"text"\s*:\s*"([^"]{20,200})"/);
       if (match && match[1]) reply = match[1];
     }
-
-    if (!reply) return "A IA não enviou uma resposta legível.";
+    if (!reply) return "O serviço está sobrecarregado, tente novamente mais tarde.";
     return String(reply).trim();
   }
 
@@ -121,7 +103,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if (sendBtn) sendBtn.addEventListener("click", sendChat);
   if (userInput) userInput.addEventListener("keydown", e => { if (e.key === "Enter") sendChat(); });
 
-  /* ---------- PONG ---------- */
   const canvas = document.getElementById("pong");
   if (!canvas) { console.error("Canvas missing"); return; }
   const ctx = canvas.getContext("2d");
@@ -172,10 +153,9 @@ document.addEventListener("DOMContentLoaded", () => {
   function aiMove() {
     const d = state.difficulty;
     let react, error;
-    if(d === "facil"){ react=0.02; error=(Math.random()*0.6-0.3)*120; }
-    else if(d==="medio"){ react=0.07; error=(Math.random()*0.4-0.2)*60; }
-    else { react=0.05; error=(Math.random()*0.2-0.1)*20; } // dificil
-
+    if(d === "facil"){ react = 0.02; error = (Math.random()*0.6-0.3)*120; }
+    else if(d==="medio"){ react = 0.07; error = (Math.random()*0.4-0.2)*60; }
+    else { react = 0.09; error = (Math.random()*0.2-0.1)*20; }
     if(d==="dificil" && ball.vx>0){
       const dist = (aiPaddle.x - ball.x);
       const t = Math.abs(dist/(ball.vx||0.0001));
@@ -195,7 +175,6 @@ document.addEventListener("DOMContentLoaded", () => {
   function handleCollisions() {
     if(ball.y-ball.r<0){ ball.y=ball.r; ball.vy*=-1; }
     if(ball.y+ball.r>canvas.height){ ball.y=canvas.height-ball.r; ball.vy*=-1; }
-
     if(ball.x-ball.r<paddle.x+paddle.w){
       if(ball.y>paddle.y && ball.y<paddle.y+paddle.h){
         const relative=(ball.y-(paddle.y+paddle.h/2))/(paddle.h/2);
@@ -206,7 +185,6 @@ document.addEventListener("DOMContentLoaded", () => {
         ball.x=paddle.x+paddle.w+ball.r+0.5;
       }
     }
-
     if(ball.x+ball.r>aiPaddle.x){
       if(ball.y>aiPaddle.y && ball.y<aiPaddle.y+aiPaddle.h){
         const relative=(ball.y-(aiPaddle.y+aiPaddle.h/2))/(aiPaddle.h/2);
@@ -261,6 +239,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function pauseRound(dir){ state.running=false; startCountdown(3,dir); }
 
+  let lastSpeedIncrease = Date.now();
+  function increaseBallSpeedOverTime() {
+    if(state.running && state.difficulty==="dificil") {
+      const now = Date.now();
+      if(now - lastSpeedIncrease >= 1000){
+        const increment = 0.05;
+        const speed = Math.hypot(ball.vx, ball.vy);
+        const angle = Math.atan2(ball.vy, ball.vx);
+        const newSpeed = speed + increment;
+        ball.vx = newSpeed * Math.cos(angle);
+        ball.vy = newSpeed * Math.sin(angle);
+        lastSpeedIncrease = now;
+      }
+    }
+  }
+
   function loop(){
     if(state.ended){ drawScene(); return; }
     if(state.running){
@@ -268,6 +262,7 @@ document.addEventListener("DOMContentLoaded", () => {
       ball.y+=ball.vy;
       handleCollisions();
       aiMove();
+      increaseBallSpeedOverTime();
       if(ball.x<0){ state.aiScore++; checkScore(); if(!state.ended) pauseRound(1); }
       else if(ball.x>canvas.width){ state.playerScore++; checkScore(); if(!state.ended) pauseRound(-1); }
     }
@@ -309,6 +304,7 @@ document.addEventListener("DOMContentLoaded", () => {
     state.playerScore=0; state.aiScore=0;
     playerScoreEl.textContent="0"; aiScoreEl.textContent="0";
     hideEndMessage();
+    resetBall();
     showPage("menu");
   });
 
@@ -316,5 +312,4 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window._IA_PROJECT={ state, ball, paddle, aiPaddle };
   console.log("IA project ready", window._IA_PROJECT);
-
 });
