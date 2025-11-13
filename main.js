@@ -38,16 +38,17 @@ document.addEventListener("DOMContentLoaded", () => {
   async function callGemini(prompt) {
     if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY não configurada em main.js");
     const MODEL_NAME = "gemini-2.5-flash";
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL_NAME)}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
-    const body = { contents: [{ parts: [{ text: String(prompt) }] }], generationConfig: { temperature: 0.6, maxOutputTokens: 300 } };
-    const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    if (!res.ok) throw new Error(`Erro da API (${res.status})`);
-    const data = await res.json().catch(() => null);
-    if (!data) throw new Error("Resposta inválida (JSON vazio).");
-    let reply = null;
-    try { reply = data?.candidates?.[0]?.content?.[0]?.parts?.[0]?.text || data?.candidates?.[0]?.content?.parts?.[0]?.text || data?.candidates?.[0]?.output || data?.output?.[0]?.content?.[0]?.text || data?.text || null; } catch { reply = null; }
-    if (!reply) return "O serviço está sobrecarregado, tente novamente mais tarde.";
-    return String(reply).trim();
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateText?key=${GEMINI_API_KEY}`;
+    const body = { prompt: prompt, temperature: 0.6, candidateCount: 1, maxOutputTokens: 300 };
+    try {
+      const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      if (!res.ok) throw new Error(`Erro da API (${res.status})`);
+      const data = await res.json();
+      const reply = data?.candidates?.[0]?.output || "O serviço está sobrecarregado, tente novamente mais tarde.";
+      return String(reply).trim();
+    } catch {
+      return "O serviço está sobrecarregado, tente novamente mais tarde.";
+    }
   }
 
   async function sendChat() {
@@ -119,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let react, error;
     if (d === "facil") { react = 0.02; error = (Math.random() * 0.6 - 0.3) * 120; }
     else if (d === "medio") { react = 0.07; error = (Math.random() * 0.4 - 0.2) * 60; }
-    else { react = 0.03; error = (Math.random() * 0.2 - 0.1) * 20; }
+    else { react = 0.02; error = (Math.random() * 0.2 - 0.1) * 20; }
 
     if (d === "dificil" && ball.vx > 0) {
       const dist = (aiPaddle.x - ball.x);
