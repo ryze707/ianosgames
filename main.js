@@ -1,6 +1,7 @@
-const GEMINI_API_KEY = "AIzaSyDvbUN8JYqndrzoek1LF5KeOHoUGjEJGuY";
+const GEMINI_API_KEY = "AIzaSyDvbUN8JYqndrzoek1LF5KeOHoUGjEJGuY"; // Coloque sua chave da Gemini aqui
 
 document.addEventListener("DOMContentLoaded", () => {
+  // ===== Páginas =====
   const pageMenu = document.getElementById("menu");
   const pageChat = document.getElementById("chat");
   const pageJogos = document.getElementById("jogos");
@@ -21,6 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
   btnCreds.addEventListener("click", () => showPage("creditos"));
   document.querySelectorAll(".back").forEach(b => b.addEventListener("click", () => showPage("menu")));
 
+  // ===== Chat =====
   const chatBox = document.getElementById("chat-box");
   const userInput = document.getElementById("user-input");
   const sendBtn = document.getElementById("send-btn");
@@ -36,23 +38,19 @@ document.addEventListener("DOMContentLoaded", () => {
   appendChat("Chat pronto. Digite algo para começar.", "ai");
 
   async function callGemini(prompt) {
-    if (!GEMINI_API_KEY) throw new Error("Chave API não configurada");
-    const MODEL_NAME = "gemini-2.5-flash";
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${GEMINI_API_KEY}`;
-    const body = { contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.6, maxOutputTokens: 300 } };
+    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY não configurada");
+    const MODEL_NAME = "gemini"; // modelo genérico
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateText?key=${GEMINI_API_KEY}`;
+    const body = { prompt: prompt, temperature: 0.6, candidateCount: 1, maxOutputTokens: 300 };
 
     try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-      });
-      if (!res.ok) throw new Error();
+      const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      if (!res.ok) throw new Error("Erro ao chamar API");
 
       const data = await res.json();
-      const reply = data?.candidates?.[0]?.content?.[0]?.parts?.[0]?.text;
-      if (!reply) throw new Error();
-      return reply.trim();
+      const reply = data?.candidates?.[0]?.output || null;
+      if (!reply) throw new Error("Resposta vazia");
+      return reply;
     } catch {
       return "A ia está sobrecarregada, tente novamente mais tarde.";
     }
@@ -77,6 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
   sendBtn.addEventListener("click", sendChat);
   userInput.addEventListener("keydown", e => { if (e.key === "Enter") sendChat(); });
 
+  // ===== Pong =====
   const canvas = document.getElementById("pong");
   const ctx = canvas.getContext("2d");
   const countdownEl = document.getElementById("countdown");
@@ -224,13 +223,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function loop() {
     if (state.ended) { drawScene(); return; }
-    if (state.running) { 
-      ball.x += ball.vx; 
-      ball.y += ball.vy; 
-      handleCollisions(); 
-      aiMove(); 
-      if (ball.x < 0) { state.aiScore++; checkScore(); if (!state.ended) pauseRound(1); } 
-      else if (ball.x > canvas.width) { state.playerScore++; checkScore(); if (!state.ended) pauseRound(-1); } 
+    if (state.running) {
+      ball.x += ball.vx;
+      ball.y += ball.vy;
+      handleCollisions();
+      aiMove();
+      if (ball.x < 0) { state.aiScore++; checkScore(); if (!state.ended) pauseRound(1); }
+      else if (ball.x > canvas.width) { state.playerScore++; checkScore(); if (!state.ended) pauseRound(-1); }
     }
     drawScene();
     requestAnimationFrame(loop);
@@ -239,35 +238,44 @@ document.addEventListener("DOMContentLoaded", () => {
   resetBall();
   loop();
 
-  canvas.addEventListener("mousemove", e => { const rect = canvas.getBoundingClientRect(); const y = e.clientY - rect.top; paddle.y = clamp(y - paddle.h / 2, 0, canvas.height - paddle.h); });
-  canvas.addEventListener("touchmove", e => { if (!e.touches || !e.touches[0]) return; const rect = canvas.getBoundingClientRect(); const y = e.touches[0].clientY - rect.top; paddle.y = clamp(y - paddle.h / 2, 0, canvas.height - paddle.h); }, { passive: true });
-
-  document.querySelectorAll(".diff-btn").forEach(btn => { 
-    btn.addEventListener("click", () => { 
-      document.querySelectorAll(".diff-btn").forEach(b => b.classList.remove("selected")); 
-      btn.classList.add("selected"); 
-      state.difficulty = btn.dataset.diff; 
-      state.playerScore = 0; 
-      state.aiScore = 0; 
-      playerScoreEl.textContent = "0"; 
-      aiScoreEl.textContent = "0"; 
-      hideEndMessage(); 
-      resetBall(); 
-      startCountdown(3, Math.random() < 0.5 ? 1 : -1); 
-    }); 
+  canvas.addEventListener("mousemove", e => {
+    const rect = canvas.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    paddle.y = clamp(y - paddle.h / 2, 0, canvas.height - paddle.h);
   });
 
-  backMenuBtn.addEventListener("click", () => { 
-    state.running = false; 
-    state.playerScore = 0; 
-    state.aiScore = 0; 
-    playerScoreEl.textContent = "0"; 
-    aiScoreEl.textContent = "0"; 
-    hideEndMessage(); 
-    resetBall(); 
-    showPage("menu"); 
+  canvas.addEventListener("touchmove", e => {
+    if (!e.touches || !e.touches[0]) return;
+    const rect = canvas.getBoundingClientRect();
+    const y = e.touches[0].clientY - rect.top;
+    paddle.y = clamp(y - paddle.h / 2, 0, canvas.height - paddle.h);
+  }, { passive: true });
+
+  document.querySelectorAll(".diff-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".diff-btn").forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
+      state.difficulty = btn.dataset.diff;
+      state.playerScore = 0;
+      state.aiScore = 0;
+      playerScoreEl.textContent = "0";
+      aiScoreEl.textContent = "0";
+      hideEndMessage();
+      resetBall();
+      startCountdown(3, Math.random() < 0.5 ? 1 : -1);
+    });
+  });
+
+  backMenuBtn.addEventListener("click", () => {
+    state.running = false;
+    state.playerScore = 0;
+    state.aiScore = 0;
+    playerScoreEl.textContent = "0";
+    aiScoreEl.textContent = "0";
+    hideEndMessage();
+    resetBall();
+    showPage("menu");
   });
 
   window._IA_PROJECT = { state, ball, paddle, aiPaddle };
 });
-
