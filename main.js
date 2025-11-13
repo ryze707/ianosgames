@@ -17,7 +17,6 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("Erro interno: página não encontrada: " + id);
       return;
     }
-    
     Object.values(pages).forEach(p => p.style.display = "none");
     pages[id].style.display = "flex";
     console.log("showPage:", id);
@@ -29,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnCreds = document.getElementById("btn-creditos");
   if (!btnChat || !btnJogos || !btnCreds) {
     console.error("Menu buttons missing", { btnChat, btnJogos, btnCreds });
-    alert("Erro: botões do menu não encontrados. Verifique index.html");
+    alert("Erro: botões do menu não encontrados.");
     return;
   }
   btnChat.addEventListener("click", () => showPage("chat"));
@@ -39,6 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.querySelectorAll(".back").forEach(b => b.addEventListener("click", () => showPage("menu")));
 
+  /* ---------- CHAT ---------- */
   const chatBox = document.getElementById("chat-box");
   const userInput = document.getElementById("user-input");
   const sendBtn = document.getElementById("send-btn");
@@ -53,63 +53,50 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   appendChat("Chat pronto. Digite algo para começar o chat.", "ai");
 
-async function callGemini(prompt) {
-  if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY não configurada em main.js");
+  async function callGemini(prompt) {
+    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY não configurada em main.js");
 
-  const MODEL_NAME = "gemini-2.5-flash";
+    const MODEL_NAME = "gemini-2.5-flash";
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL_NAME)}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL_NAME)}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
+    const body = {
+      contents: [{ parts: [{ text: String(prompt) }] }],
+      generationConfig: { temperature: 0.6, maxOutputTokens: 300 }
+    };
 
-  const body = {
-    contents: [
-      {
-        parts: [{ text: String(prompt) }]
-      }
-    ],
-    generationConfig: {
-      temperature: 0.6,
-      maxOutputTokens: 300
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      throw new Error(`Erro da API (${res.status})`);
     }
-  };
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body)
-  });
+    const data = await res.json().catch(() => null);
+    if (!data) throw new Error("Resposta inválida (JSON vazio).");
 
-  if (!res.ok) {
-    const errTxt = await res.text().catch(() => "");
-    throw new Error(`Erro da API (${res.status}): ${errTxt}`);
+    let reply = null;
+    try {
+      reply =
+        data?.candidates?.[0]?.content?.[0]?.parts?.[0]?.text ||
+        data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+        data?.candidates?.[0]?.output ||
+        data?.output?.[0]?.content?.[0]?.text ||
+        data?.text ||
+        null;
+    } catch { reply = null; }
+
+    if (!reply) {
+      const j = JSON.stringify(data);
+      const match = j.match(/"text"\s*:\s*"([^"]{20,200})"/);
+      if (match && match[1]) reply = match[1];
+    }
+
+    if (!reply) return "A IA não enviou uma resposta legível.";
+    return String(reply).trim();
   }
-
-  const data = await res.json().catch(() => null);
-  if (!data) throw new Error("Resposta inválida (JSON vazio).");
-
-  let reply = null;
-
-  try {
-    reply =
-      data?.candidates?.[0]?.content?.[0]?.parts?.[0]?.text ||
-      data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      data?.candidates?.[0]?.output ||
-      data?.output?.[0]?.content?.[0]?.text ||
-      data?.text ||
-      null;
-  } catch (e) {
-    reply = null;
-  }
-
-  if (!reply) {
-    const j = JSON.stringify(data);
-    const match = j.match(/"text"\s*:\s*"([^"]{20,200})"/);
-    if (match && match[1]) reply = match[1];
-  }
-
-  if (!reply) return "A IA não enviou uma resposta legível.";
-
-  return String(reply).trim();
-}
 
   async function sendChat() {
     const txt = (userInput?.value || "").trim();
@@ -125,15 +112,16 @@ async function callGemini(prompt) {
       const reply = await callGemini(txt);
       thinking.remove();
       appendChat(reply, "ai");
-    } catch (err) {
+    } catch {
       thinking.remove();
-      appendChat("Erro: " + (err.message || err), "ai");
+      appendChat("O serviço está sobrecarregado, tente novamente mais tarde.", "ai");
     }
   }
 
   if (sendBtn) sendBtn.addEventListener("click", sendChat);
   if (userInput) userInput.addEventListener("keydown", e => { if (e.key === "Enter") sendChat(); });
 
+  /* ---------- PONG ---------- */
   const canvas = document.getElementById("pong");
   if (!canvas) { console.error("Canvas missing"); return; }
   const ctx = canvas.getContext("2d");
@@ -144,10 +132,9 @@ async function callGemini(prompt) {
   const winnerText = document.getElementById("winner-text");
   const backMenuBtn = document.getElementById("back-menu");
 
-  const state = { running: false, difficulty: "medio", playerScore: 0, aiScore: 0, target: 5 };
-
+  const state = { running: false, difficulty: "medio", playerScore: 0, aiScore: 0, target: 3, ended: false };
   const paddle = { x: 10, w: 12, h: 90, y: canvas.height/2 - 45 };
-  const aiPaddle = { x: canvas.width - 10 - 12, w: 12, h: 90, y: canvas.height/2 - 45 };
+  const aiPaddle = { x: canvas.width - 22, w: 12, h: 90, y: canvas.height/2 - 45 };
   const ball = { x: canvas.width/2, y: canvas.height/2, r: 8, vx: 0, vy: 0, speed: 5 };
 
   function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
@@ -156,8 +143,10 @@ async function callGemini(prompt) {
     ball.x = canvas.width/2;
     ball.y = canvas.height/2;
     const angle = (Math.random()*Math.PI/4) - (Math.PI/8);
-    ball.vx = ball.speed * dir * Math.cos(angle);
-    ball.vy = ball.speed * Math.sin(angle);
+    let speed = 5;
+    if(state.difficulty === "dificil") speed *= 1.4;
+    ball.vx = speed * dir * Math.cos(angle);
+    ball.vy = speed * Math.sin(angle);
   }
 
   function drawScene() {
@@ -182,49 +171,50 @@ async function callGemini(prompt) {
 
   function aiMove() {
     const d = state.difficulty;
-    let react = d === "facil" ? 0.02 : d === "medio" ? 0.07 : 0.14;
-    const error = d === "facil" ? (Math.random()*0.6 - 0.3) * 120 : d === "medio" ? (Math.random()*0.4 - 0.2) * 60 : (Math.random()*0.2 - 0.1) * 20;
-    if (d === "dificil" && ball.vx > 0) {
+    let react, error;
+    if(d === "facil"){ react=0.02; error=(Math.random()*0.6-0.3)*120; }
+    else if(d==="medio"){ react=0.07; error=(Math.random()*0.4-0.2)*60; }
+    else { react=0.05; error=(Math.random()*0.2-0.1)*20; } // dificil
+
+    if(d==="dificil" && ball.vx>0){
       const dist = (aiPaddle.x - ball.x);
-      const t = Math.abs(dist / (ball.vx || 0.0001));
-      let predicted = ball.y + ball.vy * t;
-      while (predicted < 0 || predicted > canvas.height) {
-        if (predicted < 0) predicted = -predicted;
-        if (predicted > canvas.height) predicted = 2*canvas.height - predicted;
+      const t = Math.abs(dist/(ball.vx||0.0001));
+      let predicted = ball.y + ball.vy*t;
+      while(predicted<0||predicted>canvas.height){
+        if(predicted<0) predicted=-predicted;
+        if(predicted>canvas.height) predicted=2*canvas.height-predicted;
       }
-      aiPaddle.y += (predicted - aiPaddle.h/2 - aiPaddle.y) * react;
+      aiPaddle.y += (predicted - aiPaddle.h/2 - aiPaddle.y)*react;
     } else {
-      aiPaddle.y += ((ball.y + error) - (aiPaddle.y + aiPaddle.h/2)) * react;
-      if (d === "facil" && Math.random() < 0.004) aiPaddle.y += (Math.random()*220 - 110);
+      aiPaddle.y += ((ball.y+error) - (aiPaddle.y+aiPaddle.h/2))*react;
+      if(d==="facil" && Math.random()<0.004) aiPaddle.y += (Math.random()*220-110);
     }
-    aiPaddle.y = clamp(aiPaddle.y, 0, canvas.height - aiPaddle.h);
+    aiPaddle.y = clamp(aiPaddle.y,0,canvas.height-aiPaddle.h);
   }
 
   function handleCollisions() {
-    if (ball.y - ball.r < 0) { ball.y = ball.r; ball.vy *= -1; }
-    if (ball.y + ball.r > canvas.height) { ball.y = canvas.height - ball.r; ball.vy *= -1; }
+    if(ball.y-ball.r<0){ ball.y=ball.r; ball.vy*=-1; }
+    if(ball.y+ball.r>canvas.height){ ball.y=canvas.height-ball.r; ball.vy*=-1; }
 
-    if (ball.x - ball.r < paddle.x + paddle.w) {
-      if (ball.y > paddle.y && ball.y < paddle.y + paddle.h) {
-        const relative = (ball.y - (paddle.y + paddle.h/2)) / (paddle.h/2);
-        const maxAngle = Math.PI/4;
-        const angle = relative * maxAngle;
-        const speed = Math.min(12, Math.hypot(ball.vx, ball.vy) * 1.05);
-        ball.vx = Math.abs(speed * Math.cos(angle));
-        ball.vy = speed * Math.sin(angle);
-        ball.x = paddle.x + paddle.w + ball.r + 0.5;
+    if(ball.x-ball.r<paddle.x+paddle.w){
+      if(ball.y>paddle.y && ball.y<paddle.y+paddle.h){
+        const relative=(ball.y-(paddle.y+paddle.h/2))/(paddle.h/2);
+        const angle=relative*Math.PI/4;
+        const speed=Math.min(12,Math.hypot(ball.vx,ball.vy)*1.05);
+        ball.vx=Math.abs(speed*Math.cos(angle));
+        ball.vy=speed*Math.sin(angle);
+        ball.x=paddle.x+paddle.w+ball.r+0.5;
       }
     }
 
-    if (ball.x + ball.r > aiPaddle.x) {
-      if (ball.y > aiPaddle.y && ball.y < aiPaddle.y + aiPaddle.h) {
-        const relative = (ball.y - (aiPaddle.y + aiPaddle.h/2)) / (aiPaddle.h/2);
-        const maxAngle = Math.PI/4;
-        const angle = relative * maxAngle;
-        const speed = Math.min(12, Math.hypot(ball.vx, ball.vy) * 1.05);
-        ball.vx = -Math.abs(speed * Math.cos(angle));
-        ball.vy = speed * Math.sin(angle);
-        ball.x = aiPaddle.x - ball.r - 0.5;
+    if(ball.x+ball.r>aiPaddle.x){
+      if(ball.y>aiPaddle.y && ball.y<aiPaddle.y+aiPaddle.h){
+        const relative=(ball.y-(aiPaddle.y+aiPaddle.h/2))/(aiPaddle.h/2);
+        const angle=relative*Math.PI/4;
+        const speed=Math.min(12,Math.hypot(ball.vx,ball.vy)*1.05);
+        ball.vx=-Math.abs(speed*Math.cos(angle));
+        ball.vy=speed*Math.sin(angle);
+        ball.x=aiPaddle.x-ball.r-0.5;
       }
     }
   }
@@ -232,113 +222,99 @@ async function callGemini(prompt) {
   function checkScore() {
     playerScoreEl.textContent = state.playerScore;
     aiScoreEl.textContent = state.aiScore;
-    if (state.playerScore >= state.target || state.aiScore >= state.target) {
-      state.running = false;
-      showEnd(state.playerScore > state.aiScore);
+    if(state.playerScore>=state.target || state.aiScore>=state.target){
+      state.running=false;
+      showEnd(state.playerScore>state.aiScore);
     }
   }
 
-  function showEnd(win) {
+  function showEnd(win){
     winnerText.textContent = win ? "🎉 Você venceu!" : "😢 Você perdeu!";
     endMessage.classList.remove("hidden");
-    state.running = false;
-    state.ended = true;
+    state.running=false;
+    state.ended=true;
   }
 
-function hideEndMessage() {
-  endMessage.classList.add("hidden");
-  winnerText.textContent = "";
-  state.ended = false;
-}
+  function hideEndMessage(){
+    endMessage.classList.add("hidden");
+    winnerText.textContent="";
+    state.ended=false;
+  }
 
-  let countdownTimer = null;
-  function startCountdown(seconds = 3, dir = (Math.random() < 0.5 ? 1 : -1)) {
-    let n = seconds;
-    countdownEl.textContent = n;
-    countdownEl.style.visibility = "visible";
-    if (countdownTimer) clearInterval(countdownTimer);
-    countdownTimer = setInterval(() => {
+  let countdownTimer=null;
+  function startCountdown(seconds=3, dir=(Math.random()<0.5?1:-1)){
+    let n=seconds;
+    countdownEl.textContent=n;
+    countdownEl.style.visibility="visible";
+    if(countdownTimer) clearInterval(countdownTimer);
+    countdownTimer=setInterval(()=>{
       n--;
-      countdownEl.textContent = n > 0 ? n : "GO!";
-      if (n < 0) {
+      countdownEl.textContent=n>0?n:"GO!";
+      if(n<0){
         clearInterval(countdownTimer);
-        countdownEl.style.visibility = "hidden";
+        countdownEl.style.visibility="hidden";
         resetBall(dir);
-        state.running = true;
+        state.running=true;
       }
-    }, 1000);
+    },1000);
   }
 
-  function pauseRound(dir) {
-    state.running = false;
-    startCountdown(3, dir);
-  }
+  function pauseRound(dir){ state.running=false; startCountdown(3,dir); }
 
-  function loop() {
-  if (state.ended) {
-    drawScene();
-    return;
-  }
-
-  if (state.running) {
-    ball.x += ball.vx;
-    ball.y += ball.vy;
-    handleCollisions();
-    aiMove();
-
-    if (ball.x < 0) {
-      state.aiScore++;
-      checkScore();
-      if (!state.ended) pauseRound(1);
-    } else if (ball.x > canvas.width) {
-      state.playerScore++;
-      checkScore();
-      if (!state.ended) pauseRound(-1);
+  function loop(){
+    if(state.ended){ drawScene(); return; }
+    if(state.running){
+      ball.x+=ball.vx;
+      ball.y+=ball.vy;
+      handleCollisions();
+      aiMove();
+      if(ball.x<0){ state.aiScore++; checkScore(); if(!state.ended) pauseRound(1); }
+      else if(ball.x>canvas.width){ state.playerScore++; checkScore(); if(!state.ended) pauseRound(-1); }
     }
+    drawScene();
+    requestAnimationFrame(loop);
   }
-
-  drawScene();
-  requestAnimationFrame(loop);
-}
 
   resetBall();
   loop();
 
-  canvas.addEventListener("mousemove", (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const y = e.clientY - rect.top;
-    paddle.y = clamp(y - paddle.h/2, 0, canvas.height - paddle.h);
+  canvas.addEventListener("mousemove", e=>{
+    const rect=canvas.getBoundingClientRect();
+    const y=e.clientY-rect.top;
+    paddle.y=clamp(y-paddle.h/2,0,canvas.height-paddle.h);
   });
-  canvas.addEventListener("touchmove", (e) => {
-    if (!e.touches || !e.touches[0]) return;
-    const rect = canvas.getBoundingClientRect();
-    const y = e.touches[0].clientY - rect.top;
-    paddle.y = clamp(y - paddle.h/2, 0, canvas.height - paddle.h);
-  }, { passive: true });
 
-  document.querySelectorAll(".diff-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll(".diff-btn").forEach(b => b.classList.remove("selected"));
+  canvas.addEventListener("touchmove", e=>{
+    if(!e.touches||!e.touches[0]) return;
+    const rect=canvas.getBoundingClientRect();
+    const y=e.touches[0].clientY-rect.top;
+    paddle.y=clamp(y-paddle.h/2,0,canvas.height-paddle.h);
+  }, { passive:true });
+
+  document.querySelectorAll(".diff-btn").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      document.querySelectorAll(".diff-btn").forEach(b=>b.classList.remove("selected"));
       btn.classList.add("selected");
-      state.difficulty = btn.dataset.diff;
-      state.playerScore = 0; state.aiScore = 0;
-      playerScoreEl.textContent = "0"; aiScoreEl.textContent = "0";
+      state.difficulty=btn.dataset.diff;
+      state.playerScore=0; state.aiScore=0;
+      playerScoreEl.textContent="0"; aiScoreEl.textContent="0";
       hideEndMessage();
-      startCountdown(3, Math.random() < 0.5 ? 1 : -1);
+      resetBall();
+      startCountdown(3,Math.random()<0.5?1:-1);
     });
   });
 
-  backMenuBtn.addEventListener("click", () => {
-    state.running = false;
-    state.playerScore = 0; state.aiScore = 0;
-    playerScoreEl.textContent = "0"; aiScoreEl.textContent = "0";
+  backMenuBtn.addEventListener("click", ()=>{
+    state.running=false;
+    state.playerScore=0; state.aiScore=0;
+    playerScoreEl.textContent="0"; aiScoreEl.textContent="0";
     hideEndMessage();
     showPage("menu");
   });
 
-  document.querySelectorAll(".back").forEach(b => b.addEventListener("click", () => { state.running = false; }));
+  document.querySelectorAll(".back").forEach(b=>b.addEventListener("click", ()=>{ state.running=false; }));
 
-  window._IA_PROJECT = { state, ball, paddle, aiPaddle };
+  window._IA_PROJECT={ state, ball, paddle, aiPaddle };
   console.log("IA project ready", window._IA_PROJECT);
 
 });
