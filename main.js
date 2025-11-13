@@ -1,7 +1,8 @@
-const GEMINI_API_KEY = "AIzaSyDvbUN8JYqndrzoek1LF5KeOHoUGjEJGuY"; // Coloque sua chave da Gemini aqui
+// Main.js completo atualizado
+const GEMINI_API_KEY = "AIzaSyDvbUN8JYqndrzoek1LF5KeOHoUGjEJGuY"; // Coloque sua chave da API Gemini aqui
 
 document.addEventListener("DOMContentLoaded", () => {
-  // ===== Páginas =====
+  // ======== PÁGINAS ========
   const pageMenu = document.getElementById("menu");
   const pageChat = document.getElementById("chat");
   const pageJogos = document.getElementById("jogos");
@@ -22,7 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
   btnCreds.addEventListener("click", () => showPage("creditos"));
   document.querySelectorAll(".back").forEach(b => b.addEventListener("click", () => showPage("menu")));
 
-  // ===== Chat =====
+  // ======== CHAT ========
   const chatBox = document.getElementById("chat-box");
   const userInput = document.getElementById("user-input");
   const sendBtn = document.getElementById("send-btn");
@@ -35,19 +36,36 @@ document.addEventListener("DOMContentLoaded", () => {
     chatBox.appendChild(d);
     chatBox.scrollTop = chatBox.scrollHeight;
   }
-  appendChat("Chat pronto. Digite algo para ver o JSON completo da API.", "ai");
 
+  appendChat("Chat pronto. Cole sua chave em main.js para testar.", "ai");
+
+  // ======== FUNÇÃO PARA CHAMAR A GEMINI API ========
   async function callGemini(prompt) {
-    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY não configurada");
-    const MODEL_NAME = "gemini"; // modelo genérico
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateText?key=${GEMINI_API_KEY}`;
-    const body = { prompt: prompt, temperature: 0.6, candidateCount: 1, maxOutputTokens: 300 };
+    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY não configurada em main.js");
+
+    const MODEL_NAME = "models/text-bison-001"; // Modelo atual da API Gemini
+    const url = `https://generativelanguage.googleapis.com/v1beta/${MODEL_NAME}:generateText?key=${GEMINI_API_KEY}`;
+
+    const body = {
+      prompt: { text: prompt },
+      temperature: 0.6,
+      candidateCount: 1,
+      maxOutputTokens: 300
+    };
 
     const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const rawText = await res.text();
+
+    if (!res.ok) {
+      // Retorna o JSON completo do erro
+      return rawText;
+    }
+
     try {
       const data = JSON.parse(rawText);
-      return JSON.stringify(data, null, 2); // Retorna o JSON completo formatado
+      // Pega apenas a resposta da IA
+      const reply = data?.candidates?.[0]?.output || JSON.stringify(data, null, 2);
+      return reply;
     } catch {
       return rawText;
     }
@@ -56,23 +74,30 @@ document.addEventListener("DOMContentLoaded", () => {
   async function sendChat() {
     const txt = (userInput?.value || "").trim();
     if (!txt) return;
+
     appendChat(txt, "user");
     if (userInput) userInput.value = "";
+
     const thinking = document.createElement("div");
     thinking.className = "msg ai";
-    thinking.innerText = "Buscando JSON...";
+    thinking.innerText = "Pensando...";
     chatBox.appendChild(thinking);
     chatBox.scrollTop = chatBox.scrollHeight;
 
-    const reply = await callGemini(txt);
-    thinking.remove();
-    appendChat(reply, "ai");
+    try {
+      const reply = await callGemini(txt);
+      thinking.remove();
+      appendChat(reply, "ai");
+    } catch (err) {
+      thinking.remove();
+      appendChat("Erro inesperado: " + err.message, "ai");
+    }
   }
 
   sendBtn.addEventListener("click", sendChat);
   userInput.addEventListener("keydown", e => { if (e.key === "Enter") sendChat(); });
 
-  // ===== Pong =====
+  // ======== JOGO PONG ========
   const canvas = document.getElementById("pong");
   const ctx = canvas.getContext("2d");
   const countdownEl = document.getElementById("countdown");
@@ -103,11 +128,14 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "#050507";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+
     ctx.fillStyle = "#222";
     for (let y = 0; y < canvas.height; y += 24) ctx.fillRect(canvas.width / 2 - 2, y + 6, 4, 12);
+
     ctx.fillStyle = "#fff";
     ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
     ctx.fillRect(aiPaddle.x, aiPaddle.y, aiPaddle.w, aiPaddle.h);
+
     const g = ctx.createRadialGradient(ball.x, ball.y, 1, ball.x, ball.y, 40);
     g.addColorStop(0, "rgba(255,255,255,1)");
     g.addColorStop(1, "rgba(255,255,255,0)");
@@ -115,6 +143,7 @@ document.addEventListener("DOMContentLoaded", () => {
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
     ctx.fill();
+
     ctx.fillStyle = "#00ff9f";
     ctx.font = "28px 'Press Start 2P'";
     ctx.fillText(state.playerScore, canvas.width / 2 - 80, 40);
