@@ -25,6 +25,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const winnerText = document.getElementById("winner-text");
   const backMenuBtn = document.getElementById("back-menu");
 
+  const MAX_SCORE = 3; // limite de pontos para vencer
+
   const state = { running: false, difficulty: "medio", playerScore: 0, aiScore: 0, ended: false };
   const paddle = { x: 10, w: 12, h: 90, y: canvas.height / 2 - 45 };
   const aiPaddle = { x: canvas.width - 22, w: 12, h: 90, y: canvas.height / 2 - 45 };
@@ -69,7 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let react;
     if (d === "facil") react = 0.02;
     else if (d === "medio") react = 0.07;
-    else react = 0.04; // leve ajuste para difícil (mais rápido)
+    else react = 0.04; // ajuste bot difícil
 
     if (d === "dificil" && ball.vx > 0) {
       const dist = (aiPaddle.x - ball.x);
@@ -92,7 +94,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (ball.y - ball.r < 0) { ball.y = ball.r; ball.vy *= -1; }
     if (ball.y + ball.r > canvas.height) { ball.y = canvas.height - ball.r; ball.vy *= -1; }
 
-    // Paddle collisions
     if (ball.x - ball.r < paddle.x + paddle.w && ball.y > paddle.y && ball.y < paddle.y + paddle.h) {
       const relative = (ball.y - (paddle.y + paddle.h / 2)) / (paddle.h / 2);
       const angle = relative * Math.PI / 4;
@@ -111,7 +112,6 @@ document.addEventListener("DOMContentLoaded", () => {
       ball.x = aiPaddle.x - ball.r - 0.5;
     }
 
-    // Acelera indefinidamente no difícil
     if (state.difficulty === "dificil") {
       ball.vx *= 1.001;
       ball.vy *= 1.001;
@@ -121,6 +121,9 @@ document.addEventListener("DOMContentLoaded", () => {
   function checkScore() {
     playerScoreEl.textContent = state.playerScore;
     aiScoreEl.textContent = state.aiScore;
+
+    if (state.playerScore >= MAX_SCORE) showEnd(true);
+    else if (state.aiScore >= MAX_SCORE) showEnd(false);
   }
 
   function showEnd(win) {
@@ -165,11 +168,11 @@ document.addEventListener("DOMContentLoaded", () => {
       aiMove();
 
       if (ball.x < 0) {
-        state.aiScore += 1; // Corrigido: +1 por ponto
+        state.aiScore += 1;
         checkScore();
         if (!state.ended) pauseRound(1);
       } else if (ball.x > canvas.width) {
-        state.playerScore += 1; // Corrigido: +1 por ponto
+        state.playerScore += 1;
         checkScore();
         if (!state.ended) pauseRound(-1);
       }
