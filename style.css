@@ -42,3 +42,4 @@ canvas { border-radius:10px; box-shadow:0 12px 30px rgba(0,0,0,0.7); margin-top:
 .end-message.hidden { display:none; }
 .credits-list { list-style:none; margin-top:16px; color:#ffd166; line-height:2; }
 @media (max-width:900px) { .big { padding:14px 30px; } .diff-btn { min-width:80px; padding:10px 12px; } canvas { width:92%; height:auto; } }
+
