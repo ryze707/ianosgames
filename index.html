@@ -1,69 +1,71 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>IA NOS GAMES</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>IA Project — Jogos</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-
-  <!-- MENU -->
-  <div id="menu" class="page">
-    <div class="center-card">
-      <div class="controller-icon">🎮</div>
-      <h1>INTELIGÊNCIA ARTIFICIAL NOS GAMES</h1>
-
-      <div class="menu-buttons column">
+  <main id="app">
+    <section id="menu" class="page active">
+      <h1>Menu</h1>
+      <div class="menu-buttons">
         <button id="btn-jogos" class="big">Jogos</button>
         <button id="btn-creditos" class="big">Créditos</button>
       </div>
+    </section>
 
-      <p class="sub">Feito por Daniel, Bernardo, João, Misael e Paulo</p>
-    </div>
-  </div>
+    <section id="jogos" class="page">
+      <header class="topbar">
+        <button class="back">Voltar</button>
+        <div class="title">Pong</div>
+        <div class="spacer"></div>
+      </header>
 
-  <!-- JOGOS -->
-  <div id="jogos" class="page" style="display:none;">
-    <button class="back">← Voltar</button>
-    <div class="center-card">
-      <h2>Pong — escolha a dificuldade</h2>
+      <div class="game-area">
+        <canvas id="pong" width="700" height="420"></canvas>
 
-      <div class="difficulty centered">
-        <button data-diff="facil" class="diff-btn facil">Fácil</button>
-        <button data-diff="medio" class="diff-btn medio">Médio</button>
-        <button data-diff="dificil" class="diff-btn dificil">Dificil</button>
+        <div class="hud">
+          <div class="scores">
+            <div>Você: <span id="player-score">0</span></div>
+            <div>Bot: <span id="ai-score">0</span></div>
+          </div>
+
+          <div class="controls">
+            <div class="diffs">
+              <button class="diff-btn" data-diff="facil">Fácil</button>
+              <button class="diff-btn selected" data-diff="medio">Médio</button>
+              <button class="diff-btn" data-diff="dificil">Difícil</button>
+            </div>
+
+            <div class="start-area">
+              <button id="start-btn" class="small">Jogar</button>
+              <div id="countdown" class="countdown hidden">3</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="end-message" class="end-message hidden">
+          <div id="winner-text" class="winner-text"></div>
+          <button id="back-menu" class="small">Voltar ao Menu</button>
+        </div>
       </div>
+    </section>
 
-      <div id="game-wrap" class="game-wrap">
-        <canvas id="pong" width="800" height="480"></canvas>
+    <section id="creditos" class="page">
+      <header class="topbar">
+        <button class="back">Voltar</button>
+        <div class="title">Créditos</div>
+        <div class="spacer"></div>
+      </header>
+      <div class="credits-content">
+        <h2>Créditos</h2>
+        <p>Projeto Pong — versão local. HTML / CSS / JS.</p>
+        <p>Coloque aqui as informações que desejar.</p>
       </div>
-
-      <div class="scoreboard">
-        <span id="player-score">0</span> : <span id="ai-score">0</span>
-      </div>
-
-      <div id="end-message" class="end-message hidden">
-        <p id="winner-text"></p>
-        <button id="back-menu" class="big small">Voltar ao Menu</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- CRÉDITOS -->
-  <div id="creditos" class="page" style="display:none;">
-    <button class="back">← Voltar</button>
-    <div class="center-card narrow">
-      <h2>Créditos</h2>
-      <ul class="credits-list">
-        <li>Daniel</li>
-        <li>Bernardo</li>
-        <li>João</li>
-        <li>Misael</li>
-        <li>Paulo</li>
-      </ul>
-    </div>
-  </div>
+    </section>
+  </main>
 
   <script src="main.js"></script>
 </body>
