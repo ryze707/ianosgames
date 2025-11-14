@@ -1,104 +1,44 @@
-/* ===== Fundo ===== */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html,body { height: 100%; }
 body {
-    margin: 0;
-    padding: 0;
-    background: url("img/mario-bg.png") no-repeat center center fixed;
-    background-size: cover;
-    font-family: Arial, sans-serif;
+  font-family: 'Press Start 2P', monospace;
+  color: #fff;
+  background: url("mario-bg.png") center center / cover no-repeat fixed;
+  overflow: hidden;
 }
-
-/* ===== Container do Menu ===== */
-.menu-container {
-    width: 100%;
-    max-width: 500px;
-    margin: 120px auto;
-    padding: 25px;
-    background: rgba(0, 0, 0, 0.55);
-    border-radius: 15px;
-    text-align: center;
-    color: white;
-    box-shadow: 0 0 15px rgba(0,0,0,0.6);
+body::before {
+  content:""; position:fixed; inset:0;
+  background: rgba(0,0,0,0.45); backdrop-filter: blur(4px); z-index:-1;
 }
-
-/* ===== Título ===== */
-.menu-container h1 {
-    font-size: 34px;
-    margin-bottom: 20px;
-    text-shadow: 2px 2px 4px black;
-}
-
-/* ===== Botões do Menu ===== */
-button {
-    width: 90%;
-    margin: 12px 0;
-    padding: 16px;
-    font-size: 20px;
-    border-radius: 12px;
-    border: none;
-    background: rgb(255, 60, 60);
-    color: white;
-    cursor: pointer;
-    font-weight: bold;
-    transition: 0.2s ease-in-out;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
-}
-
-button:hover {
-    transform: scale(1.07);
-    background: rgb(255, 90, 90);
-}
-
-/* ===== Tela dos Jogos ===== */
-.jogos-container {
-    display: none;
-    margin-top: 20px;
-    padding: 20px;
-    background: rgba(0,0,0,0.55);
-    border-radius: 12px;
-    color: white;
-}
-
-/* ===== Tela de Créditos ===== */
-.creditos-container {
-    display: none;
-    margin-top: 20px;
-    padding: 20px;
-    background: rgba(0,0,0,0.55);
-    border-radius: 12px;
-    color: white;
-    line-height: 28px;
-}
-
-/* ===== Botão de voltar ===== */
-.voltar {
-    margin-top: 20px;
-    background: rgb(50, 130, 255);
-}
-
-.voltar:hover {
-    background: rgb(80, 150, 255);
-}
-
-/* ===== Cards de Jogos ===== */
-.jogo-card {
-    width: 100%;
-    background: rgba(255,255,255,0.15);
-    border-radius: 10px;
-    padding: 15px;
-    margin: 15px 0;
-    cursor: pointer;
-    font-size: 18px;
-    font-weight: bold;
-    transition: 0.2s ease-in-out;
-}
-
-.jogo-card:hover {
-    background: rgba(255,255,255,0.25);
-    transform: scale(1.03);
-}
-
-/* ===== Texto Geral ===== */
-p {
-    font-size: 18px;
-    text-shadow: 1px 1px 3px black;
-}
+.page { display: none; height:100vh; width:100%; display:flex; align-items:center; justify-content:center; }
+.page.active { display:flex; }
+.center-card { width: min(980px,94%); background: rgba(0,0,0,0.66); padding:26px; border-radius:12px; text-align:center; box-shadow: 0 12px 40px rgba(0,0,0,0.7); border: 3px solid rgba(255,255,255,0.03); }
+.controller-icon { font-size:44px; margin-bottom:8px; }
+h1 { color:#ffd166; font-size:22px; margin-bottom:12px; text-shadow: 0 6px 0 rgba(0,0,0,0.6); }
+.menu-buttons.column { display:flex; flex-direction:column; gap:18px; align-items:center; justify-content:center; margin-top:12px; }
+.big { padding:20px 46px; font-size:16px; border-radius:12px; border:none; background: linear-gradient(180deg,#00ff9f,#009e6e); color:#001; cursor:pointer; box-shadow: 0 6px 0 rgba(0,0,0,0.5); }
+.big.small { padding:12px 18px; font-size:12px; }
+.sub { margin-top:16px; font-size:11px; color:#cfcfcf; }
+.back { position: fixed; left:14px; top:14px; background: rgba(0,0,0,0.6); border: 2px solid #00ff9f; color:#fff; padding:8px 12px; border-radius:8px; cursor:pointer; display:none; }
+.page:not(#menu) .back { display:block; }
+.chat-box { width:90%; max-width:720px; height:54vh; background: rgba(0,0,0,0.6); border-radius:10px; padding:12px; overflow:auto; border:2px solid #00ff9f; margin-bottom:12px; }
+.chat-box .msg { margin:8px 0; padding:8px; border-radius:8px; background: rgba(255,255,255,0.06); text-align:left; }
+.msg.user { border-left:4px solid #00ff9f; text-align:right; }
+.msg.ai { border-left:4px solid #ffd166; }
+.chat-input { display:flex; gap:10px; justify-content:center; align-items:center; margin-top:6px; }
+.chat-input input { width:70%; padding:10px; border-radius:8px; background: rgba(0,0,0,0.6); border:2px solid #00ff9f; color:#fff; }
+.chat-input button { padding:10px 14px; border-radius:8px; border:none; background:#00ff9f; color:#001; cursor:pointer; }
+.difficulty.centered { display:flex; gap:14px; justify-content:center; margin-bottom:10px; }
+.diff-btn { padding:12px 18px; border-radius:8px; border:none; color:#fff; cursor:pointer; min-width:110px; font-size:13px; }
+.facil { background: #23d160; } .medio { background: #ff9f1c; } .dificil { background: #ff3b3b; }
+.diff-btn.selected { transform: translateY(-6px); box-shadow:0 10px 30px rgba(0,0,0,0.5); outline:3px solid rgba(255,255,255,0.06); }
+.countdown { font-family:'Press Start 2P'; font-size:48px; color:#ffd166; margin:12px 0; height:56px; text-align:center; }
+.game-wrap { display:flex; justify-content:center; align-items:center; }
+canvas { border-radius:10px; box-shadow:0 12px 30px rgba(0,0,0,0.7); margin-top:12px; background: rgba(0,0,0,0.95); border: 4px solid rgba(0,255,159,0.06); }
+.scoreboard { margin-top:12px; font-size:20px; color:#00ff9f; }
+.end-message { margin-top:18px; } .end-message p { font-size:18px; color:#ffd166; margin-bottom:8px; }
+.end-message.hidden { display:none; }
+.credits-list { list-style:none; margin-top:16px; color:#ffd166; line-height:2; }
+@media (max-width:900px) { .big { padding:14px 30px; } .diff-btn { min-width:80px; padding:10px 12px; } canvas { width:92%; height:auto; } }
